@@ -1,2 +1,35 @@
 
-<div class="content"><h1>الدروس</h1><div class="toolbar"><input id="search" placeholder="بحث"><select id="status"><option value="">كل الحالات</option><option>DRAFT</option><option>SUBMITTED</option><option>APPROVED</option><option>PUBLISHED</option></select><button class="primary" onclick="loadLessons()">تصفية</button></div><div id="table"></div></div><script>loadLessons()</script>
+<div class="content">
+  <h1>الدروس</h1>
+  <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <input id="search" placeholder="بحث في الدروس" style="min-width:220px;">
+    <select id="status">
+      <option value="">كل الحالات</option>
+      <option value="DRAFT">مسودة</option>
+      <option value="SUBMITTED">مرسلة للمراجعة</option>
+      <option value="UNDER_REVIEW">قيد المراجعة</option>
+      <option value="REVISION_REQUIRED">تحتاج إلى تعديل</option>
+      <option value="APPROVED">معتمدة</option>
+      <option value="PUBLISHED">منشورة</option>
+      <option value="ARCHIVED">مؤرشفة</option>
+    </select>
+    <select id="sort">
+      <option value="updatedAt">الأحدث</option>
+      <option value="title">العنوان</option>
+      <option value="status">الحالة</option>
+    </select>
+    <button class="primary" onclick="loadLessons()">تصفية</button>
+    <button onclick="createLessonQuick()">إعداد درس جديد</button>
+  </div>
+  <div id="table"></div>
+</div>
+<script>
+function createLessonQuick(){
+  var title = window.prompt('عنوان الدرس الجديد', 'درس جديد');
+  if (!title) return;
+  google.script.run.withSuccessHandler(function(data){
+    if (data && data.id) loadLessons();
+  }).api('lessonCreate',{lesson:{title:title,subject:'عام',grade:'المرحلة الأساسية',summary:'تم إنشاؤه من الواجهة',content:{sections:[{title:'مقدمة',body:'محتوى جديد'}]}}});
+}
+loadLessons();
+</script>
