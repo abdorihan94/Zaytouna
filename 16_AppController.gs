@@ -1,1 +1,4 @@
 
+function doGet(){return HtmlService.createTemplateFromFile('Index').evaluate().setTitle(CONFIG.DEFAULT_SCHOOL_NAME).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);}
+function include(filename){return HtmlService.createHtmlOutputFromFile(filename).getContent();}
+function api(action,payload){try{var data;if(action==='bootstrap')data={user:UserRoleService.current(),milestone:CONFIG.MILESTONE,lessonStatuses:LESSON_STATUSES};else if(action==='list')data=MasterDataService.list(payload.entity,payload.query);else if(action==='save')data=MasterDataService.save(payload.entity,payload.data);else if(action==='archive')data=MasterDataService.archive(payload.entity,payload.id);else if(action==='lessons')data=listLessons(payload);else throw Error('عملية غير معروفة');return envelope_(true,data,'تمت العملية بنجاح');}catch(e){logSystem_('ERROR',e.message,{action:action});return envelope_(false,null,'تعذر تنفيذ العملية','REQUEST_FAILED');}}

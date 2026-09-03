@@ -1,1 +1,10 @@
 
+<script>
+function call(action,payload,done){google.script.run.withSuccessHandler(function(r){if(!r.success){alert(r.message);return;}if(done)done(r.data);}).withFailureHandler(function(){alert('حدث خطأ غير متوقع');}).api(action,payload||{});}
+function showPage(name){google.script.run.withSuccessHandler(function(html){document.getElementById('content').innerHTML=html;}).include(name);}
+function renderRows(rows){var el=document.getElementById('table');if(!el)return;el.innerHTML=rows.length?'<table style="width:100%;background:#fff;padding:10px"><tbody>'+rows.map(function(r){return '<tr>'+Object.keys(r).slice(0,5).map(function(k){return '<td>'+String(r[k]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>':'<p>لا توجد سجلات.</p>';}
+function loadEntity(entity){call('list',{entity:entity,query:(document.getElementById('search')||{}).value},renderRows);}
+function loadLessons(){call('lessons',{query:(document.getElementById('search')||{}).value,status:(document.getElementById('status')||{}).value},renderRows);}
+function boot(){call('bootstrap',{},function(d){document.getElementById('userName').textContent=d.user.name||'';document.getElementById('version').textContent=d.milestone;['STUDENTS','TEACHERS','LESSONS'].forEach(function(e){call('list',{entity:e},function(rows){var id=e==='STUDENTS'?'studentCount':e==='TEACHERS'?'teacherCount':'lessonCount';document.getElementById(id).textContent=rows.length;});});});}
+document.addEventListener('DOMContentLoaded',boot);
+</script>
