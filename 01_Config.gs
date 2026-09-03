@@ -1,1 +1,7 @@
 
+var CONFIG = {
+  MILESTONE: '3.0.0',
+  SPREADSHEET_ID_KEY: 'SPREADSHEET_ID',
+  SCHOOL_NAME_KEY: 'SCHOOL_NAME',
+  DEFAULT_SCHOOL_NAME: 'بوابة المناهج والتدريس'
+};

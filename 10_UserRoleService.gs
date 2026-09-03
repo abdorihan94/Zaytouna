@@ -1,1 +1,2 @@
 
+var UserRoleService={current:function(){var a=AuthService.identify(),u=DatabaseService.rows('USERS').filter(function(x){return String(x.email).toLowerCase()===a.email&&String(x.status||'ACTIVE')==='ACTIVE';})[0];return {email:a.email,roles:u&&u.roles?String(u.roles).split(','):[],name:u&&u.name||a.email};},hasRole:function(role){return this.current().roles.indexOf(role)>=0||this.current().roles.indexOf('ADMIN')>=0;}};
