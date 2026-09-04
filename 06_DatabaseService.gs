@@ -3,7 +3,7 @@ function getDatabaseSpreadsheet_() {
   var spreadsheetId = null;
   try {
     if (typeof ConfigService !== 'undefined' && ConfigService.get) {
-      spreadsheetId = ConfigService.get('DATABASE_SPREADSHEET_ID');
+      spreadsheetId = ConfigService.get('1f6vzPD6VztFVdH-i5Yq-5ZUuBp_6VsU4w-h1_QXUr08');
     }
   } catch (e) {}
 
