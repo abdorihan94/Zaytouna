@@ -1,0 +1,4 @@
+<div class="content"><h1>نماذج التقييم</h1><p>صمّم نماذج قابلة لإعادة الاستخدام، ثم فعّل نسخة جديدة دون تغيير السجلات التاريخية.</p><div id="evaluationForms"></div></div>
+<script>
+function loadEvaluationForms(){call('evaluationForms',{},function(items){var labels={DRAFT:'مسودة',ACTIVE:'نشطة',ARCHIVED:'مؤرشفة'};var el=document.getElementById('evaluationForms');if(!items||!items.length){el.innerHTML='<p>لا توجد نماذج تقييم.</p>';return;}el.innerHTML='<table style="width:100%;background:#fff"><tr><th>النموذج</th><th>الإصدار</th><th>الحالة</th><th>المعايير</th></tr>'+items.map(function(x){return '<tr><td>'+String(x.form.title||'')+'</td><td>'+x.form.version+'</td><td>'+String(labels[x.form.status]||x.form.status)+'</td><td>'+x.criteria.length+'</td></tr>';}).join('')+'</table>';});}
+</script>

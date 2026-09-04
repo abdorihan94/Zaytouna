@@ -1,6 +1,6 @@
 # زيتونة — بوابة المناهج والتدريس
 
-بوابة Google Apps Script عربية RTL لإدارة البيانات الأساسية وسير الدروس داخل المدرسة. **MILESTONE = 5.0.0**
+بوابة Google Apps Script عربية RTL لإدارة البيانات الأساسية وسير الدروس داخل المدرسة. **MILESTONE = 6.0.0**
 
 ## 1) الهندسة المعمارية
 
@@ -17,6 +17,15 @@
 - `16_AppController.gs`: نقطة دخول API.
 - `18_MasterDataService.gs` / `19_StudentService.gs` / `20_TeacherService.gs` / `21_CurriculumService.gs`: خدمات البيانات الأساسية.
 - `22_LessonFoundationService.gs` / `23_LessonWorkflowService.gs`: مكوّنات ومتطلبات Milestone 4.
+- `24_EvaluationService.gs`: نماذج التقييم وإصداراتها، نطاق المعلم، المسودات والإرسال والتاريخ والملخصات.
+
+## 14) Milestone 6 — نظام تقييم الطلاب
+
+تمت إضافة الجداول الآمنة `EVALUATION_FORMS`, `EVALUATION_CRITERIA`, `EVALUATIONS`, و`EVALUATION_RESPONSES`. النموذج قابل للتهيئة حسب نوع الإجابة والخيارات، ولا يمكن تعديل نسخة مستخدمة؛ يرتبط كل تقييم بنسخة النموذج حتى تبقى السجلات التاريخية قابلة للقراءة بعد أرشفة النموذج.
+
+تتطلب إدارة النماذج `MANAGE_EVALUATIONS`، بينما يتطلب العرض `VIEW_EVALUATIONS`. المعلم لا يستطيع إنشاء أو تعديل تقييم إلا لطالب يقع صفه ومادته ضمن `USER_ASSIGNMENTS`، ولا يسمح الخادم بتعديل التقييم بعد إرساله. تشمل API الإجراءات `evaluationForms`, `evaluationFormSave`, `evaluationFormActivate`, `teacherEvaluationData`, `evaluationGet`, `evaluationSave`, `evaluationSubmit`, `evaluationHistory`, و`evaluationDashboard`. الواجهتان الجديدتان هما `EvaluationForms.html` و`TeacherEvaluations.html`.
+
+تُسجل عمليات الحفظ والتفعيل والإرسال في `AUDIT_LOG`، وتُسجل الأخطاء والرفض في `SYSTEM_LOG`. التحقق الفعلي من Sheets/Session وواجهة Apps Script المنشورة واختبار UAT متعدد المستخدمين **Not Tested** في بيئة التطوير الحالية.
 
 التجميع الحالي يفضل الجداول المسبقة في Sheets مع وضع البيانات في `LESSONS`, `LESSON_CONTENT`, `LESSON_WORKFLOW`, و`FILES`, بدل إنشاء عمليات حذف أو تحديثات مدمرة.
 
