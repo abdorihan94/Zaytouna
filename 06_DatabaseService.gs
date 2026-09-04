@@ -1,7 +1,7 @@
 function getDatabaseSpreadsheet_() {
   var spreadsheetId = null;
 
-  // Try ConfigService first (if implemented in your repo), then fallback to CONFIG constant.
+  // Try service config first
   try {
     if (typeof ConfigService !== 'undefined' && ConfigService.get) {
       spreadsheetId =
@@ -10,7 +10,7 @@ function getDatabaseSpreadsheet_() {
     }
   } catch (e) {}
 
-  // Your current repo stores the actual ID in CONFIG.SPREADSHEET_ID_KEY
+  // Fallback to CONFIG constant used in this repo
   if (!spreadsheetId && typeof CONFIG !== 'undefined' && CONFIG.SPREADSHEET_ID_KEY) {
     spreadsheetId = CONFIG.SPREADSHEET_ID_KEY;
   }
@@ -27,7 +27,7 @@ function getDatabaseSpreadsheet_() {
   if (active) return active;
 
   throw new Error(
-    'Database spreadsheet is not available. Configure spreadsheet ID or run from bound sheet context.'
+    'Database spreadsheet is not available. Configure spreadsheet ID or run from bound spreadsheet context.'
   );
 }
 
@@ -44,13 +44,6 @@ function ensureSheet(sheetName, headers) {
   }
   return sheet;
 }
-
-/**
- * Service facade for compatibility with code that expects DatabaseService.*
- */
-var DatabaseService = DatabaseService || {};
-DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
-DatabaseService.ensureSheet = ensureSheet;
 
 function rows(sheetName) {
   var sheet = ensureSheet(sheetName);
@@ -69,16 +62,19 @@ function appendRow(sheetName, rowValues) {
 function setRows(sheetName, values, headers) {
   var sheet = ensureSheet(sheetName, headers || null);
   sheet.clearContents();
+
   if (headers && headers.length) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
+
   if (values && values.length) {
     sheet.getRange(2, 1, values.length, values[0].length).setValues(values);
   }
+
   return true;
 }
 
-// Facade methods expected by service-style callers
+/** Compatibility facade for existing calls like DatabaseService.rows(...) */
 var DatabaseService = DatabaseService || {};
 DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
 DatabaseService.ensureSheet = ensureSheet;
