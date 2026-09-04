@@ -1,6 +1,6 @@
 
 var CONFIG = {
-  MILESTONE: '4.0.0',
+  MILESTONE: '5.0.0',
   SPREADSHEET_ID_KEY: '1f6vzPD6VztFVdH-i5Yq-5ZUuBp_6VsU4w-h1_QXUr08',
   SCHOOL_NAME_KEY: 'Zaytouna',
   DEFAULT_SCHOOL_NAME: 'بوابة المناهج والتدريس',

@@ -45,13 +45,81 @@ function ensureSheet(sheetName, headers) {
   return sheet;
 }
 
+function readHeaders_(sheet) {
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) return [];
+  return sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+}
+
+// Returns every data row as a plain object keyed by the header row, instead
+// of raw arrays, since every consumer in this codebase (MasterDataService,
+// LessonWorkflowService, UserRoleService, ...) reads named properties such
+// as `row.id` / `row.email` / `row.status`.
 function rows(sheetName) {
   var sheet = ensureSheet(sheetName);
   var lastRow = sheet.getLastRow();
   var lastCol = sheet.getLastColumn();
 
   if (lastRow < 2 || lastCol < 1) return [];
-  return sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  var headers = readHeaders_(sheet);
+  var values = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  return values.map(function(rowValues) {
+    var record = {};
+    headers.forEach(function(header, index) {
+      if (header) record[header] = rowValues[index];
+    });
+    return record;
+  });
+}
+
+function findRowNumberById_(sheet, headers, id) {
+  var idColumn = headers.indexOf('id');
+  if (idColumn < 0) return -1;
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return -1;
+
+  var ids = sheet.getRange(2, idColumn + 1, lastRow - 1, 1).getValues();
+  for (var i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(id)) return i + 2; // 1-based sheet row
+  }
+  return -1;
+}
+
+// Finds a single record by its `id` column, returned as a header-keyed object.
+function find(sheetName, id) {
+  if (id === null || id === undefined || id === '') return null;
+
+  var sheet = ensureSheet(sheetName);
+  var headers = readHeaders_(sheet);
+  var rowNumber = findRowNumberById_(sheet, headers, id);
+  if (rowNumber < 0) return null;
+
+  var values = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+  var record = {};
+  headers.forEach(function(header, index) {
+    if (header) record[header] = values[index];
+  });
+  return record;
+}
+
+function objectToRow_(headers, data) {
+  return headers.map(function(header) {
+    return Object.prototype.hasOwnProperty.call(data, header) ? data[header] : '';
+  });
+}
+
+function ensureHeadersCover_(sheet, headers, data) {
+  var missing = Object.keys(data).filter(function(key) {
+    return headers.indexOf(key) < 0;
+  });
+  if (!missing.length) return headers;
+
+  var extended = headers.concat(missing);
+  sheet.getRange(1, 1, 1, extended.length).setValues([extended]);
+  return extended;
 }
 
 function appendRow(sheetName, rowValues) {
@@ -61,15 +129,8 @@ function appendRow(sheetName, rowValues) {
   if (Array.isArray(rowValues)) {
     row = Array.isArray(rowValues[0]) ? rowValues[0] : rowValues;
   } else if (rowValues && typeof rowValues === 'object') {
-    var lastCol = sheet.getLastColumn();
-    if (lastCol > 0) {
-      var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-      row = headers.map(function(h) {
-        return Object.prototype.hasOwnProperty.call(rowValues, h) ? rowValues[h] : '';
-      });
-    } else {
-      row = Object.keys(rowValues).map(function(k) { return rowValues[k]; });
-    }
+    var headers = ensureHeadersCover_(sheet, readHeaders_(sheet), rowValues);
+    row = objectToRow_(headers, rowValues);
   } else {
     row = [rowValues];
   }
@@ -80,6 +141,27 @@ function appendRow(sheetName, rowValues) {
 
 function append(sheetName, rowValues) {
   return appendRow(sheetName, rowValues);
+}
+
+// Inserts a new record, or updates the existing row matching `data.id` in
+// place (no destructive clears), preserving history for append-only tables
+// such as LESSON_WORKFLOW/AUDIT_LOG which should always use append() instead.
+function upsert(sheetName, data) {
+  data = data || {};
+  var sheet = ensureSheet(sheetName);
+  var headers = ensureHeadersCover_(sheet, readHeaders_(sheet), data);
+  var rowNumber = data.id !== undefined && data.id !== null && data.id !== ''
+    ? findRowNumberById_(sheet, headers, data.id)
+    : -1;
+  var rowValues = objectToRow_(headers, data);
+
+  if (rowNumber > 0) {
+    sheet.getRange(rowNumber, 1, 1, headers.length).setValues([rowValues]);
+  } else {
+    sheet.appendRow(rowValues);
+  }
+
+  return data;
 }
 
 function setRows(sheetName, values, headers) {
@@ -106,6 +188,8 @@ var DatabaseService = DatabaseService || {};
 DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
 DatabaseService.ensureSheet = ensureSheet;
 DatabaseService.rows = rows;
+DatabaseService.find = find;
+DatabaseService.upsert = upsert;
 DatabaseService.appendRow = appendRow;
 DatabaseService.append = append;
 DatabaseService.setRows = setRows;
