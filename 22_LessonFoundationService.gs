@@ -4,18 +4,26 @@
 // (ADMIN/CURRICULUM/SUPERVISOR/MANAGEMENT) can see every lesson for review
 // purposes, while everyone else is scoped to lessons they authored plus any
 // lesson that has already reached the PUBLISHED status.
-function currentLessonPermissions_(){var roles=UserRoleService.current().roles||[];if(roles.indexOf('ADMIN')>=0)return {__admin:true};var rows=DatabaseService.rows('ROLE_PERMISSIONS');var perms={};rows.forEach(function(r){if(roles.indexOf(r.role)>=0)perms[r.permission]=true;});return perms;}
+var __lessonPermissionsCache_ = null;
+var __lessonPermissionsCacheEmail_ = null;
+// Memoized per current user email so a single request that calls this
+// multiple times (list -> authorize -> visibility checks) only reads
+// ROLE_PERMISSIONS once, while still staying safe if the underlying Apps
+// Script container is ever reused across a different user's execution.
+function currentLessonPermissions_(){var email=currentEmail_();if(__lessonPermissionsCache_&&__lessonPermissionsCacheEmail_===email)return __lessonPermissionsCache_;var roles=UserRoleService.current().roles||[];var perms=roles.indexOf('ADMIN')>=0?{__admin:true}:{};if(!perms.__admin){var rows=DatabaseService.rows('ROLE_PERMISSIONS');rows.forEach(function(r){if(roles.indexOf(r.role)>=0)perms[r.permission]=true;});}__lessonPermissionsCache_=perms;__lessonPermissionsCacheEmail_=email;return perms;}
 
 function hasElevatedLessonAccess_(){var perms=currentLessonPermissions_();return !!(perms.__admin||perms.REVIEW_LESSONS||perms.APPROVE_LESSONS||perms.PUBLISH_LESSONS||perms.ARCHIVE_LESSONS);}
 
 function lessonVisibilityContext_(){return {elevated:hasElevatedLessonAccess_(),email:currentEmail_()};}
 
+// Single shared predicate for "can this caller see this lesson row" so the
+// list filter and the single-record check can never drift apart.
+function lessonOwnedOrVisible_(lesson, context){if(!lesson)return false;context=context||{};if(context.elevated)return true;var email=String(context.email||'').toLowerCase();return String(lesson.teacherEmail||'').toLowerCase()===email||String(lesson.status)==='PUBLISHED';}
+
 // Pure filtering function kept separate from Apps Script services so it can
 // be exercised directly (see /tmp verification harness) without Session/
 // SpreadsheetApp/DriveApp being available.
-function filterLessonsByVisibility_(rows, context){context=context||{};if(context.elevated)return rows;var email=String(context.email||'').toLowerCase();return (rows||[]).filter(function(r){return String(r.teacherEmail||'').toLowerCase()===email||String(r.status)==='PUBLISHED';});}
-
-function lessonOwnedOrVisible_(lesson, context){if(!lesson)return false;context=context||{};if(context.elevated)return true;var email=String(context.email||'').toLowerCase();return String(lesson.teacherEmail||'').toLowerCase()===email||String(lesson.status)==='PUBLISHED';}
+function filterLessonsByVisibility_(rows, context){context=context||{};if(context.elevated)return rows;return (rows||[]).filter(function(r){return lessonOwnedOrVisible_(r,context);});}
 
 // Allows the teacher who authored a lesson to perform an action (e.g. submit
 // their own draft for review) even without the broader reviewer permission,
