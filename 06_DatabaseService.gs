@@ -9,6 +9,7 @@ function getDatabaseSpreadsheet_() {
     }
   } catch (e) {}
 
+  // Repo-specific fallback: CONFIG contains the actual spreadsheet ID value
   if (!spreadsheetId && typeof CONFIG !== 'undefined' && CONFIG.SPREADSHEET_ID_KEY) {
     spreadsheetId = CONFIG.SPREADSHEET_ID_KEY;
   }
@@ -24,20 +25,23 @@ function getDatabaseSpreadsheet_() {
   var active = SpreadsheetApp.getActiveSpreadsheet();
   if (active) return active;
 
-  throw new Error('Database spreadsheet is not available.');
+  throw new Error(
+    'Database spreadsheet is not available. Configure spreadsheet ID or run from bound spreadsheet context.'
+  );
 }
 
 function ensureSheet(sheetName, headers) {
   var ss = getDatabaseSpreadsheet_();
   var sheet = ss.getSheetByName(sheetName);
+
   if (!sheet) {
     sheet = ss.insertSheet(sheetName);
-    if (headers && headers.length) {
-      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    }
-  } else if (headers && headers.length && sheet.getLastRow() === 0) {
+  }
+
+  if (headers && headers.length && sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
+
   return sheet;
 }
 
@@ -45,6 +49,7 @@ function rows(sheetName) {
   var sheet = ensureSheet(sheetName);
   var lastRow = sheet.getLastRow();
   var lastCol = sheet.getLastColumn();
+
   if (lastRow < 2 || lastCol < 1) return [];
   return sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 }
@@ -52,13 +57,10 @@ function rows(sheetName) {
 function appendRow(sheetName, rowValues) {
   var sheet = ensureSheet(sheetName);
 
-  // Accept object / scalar / 2D / 1D and normalize to a single row array
   var row;
   if (Array.isArray(rowValues)) {
-    // If passed as [[...]], take first row
     row = Array.isArray(rowValues[0]) ? rowValues[0] : rowValues;
   } else if (rowValues && typeof rowValues === 'object') {
-    // Map object values by header order when possible
     var lastCol = sheet.getLastColumn();
     if (lastCol > 0) {
       var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -83,30 +85,23 @@ function append(sheetName, rowValues) {
 function setRows(sheetName, values, headers) {
   var sheet = ensureSheet(sheetName, headers || null);
   sheet.clearContents();
+
   if (headers && headers.length) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
+
   if (values && values.length) {
     sheet.getRange(2, 1, values.length, values[0].length).setValues(values);
   }
+
   return true;
 }
-
-var DatabaseService = DatabaseService || {};
-DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
-DatabaseService.ensureSheet = ensureSheet;
-DatabaseService.rows = rows;
-DatabaseService.appendRow = appendRow;
-DatabaseService.append = append;      // <- important
-DatabaseService.setRows = setRows;
 
 function spreadsheet() {
   return getDatabaseSpreadsheet_();
 }
 
-var DatabaseService = DatabaseService || {};
-DatabaseService.spreadsheet = spreadsheet;
-
+// Compatibility facade for code that calls DatabaseService.*
 var DatabaseService = DatabaseService || {};
 DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
 DatabaseService.ensureSheet = ensureSheet;
