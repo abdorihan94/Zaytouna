@@ -1,7 +1,6 @@
 function getDatabaseSpreadsheet_() {
   var spreadsheetId = null;
 
-  // Try service config first
   try {
     if (typeof ConfigService !== 'undefined' && ConfigService.get) {
       spreadsheetId =
@@ -10,7 +9,6 @@ function getDatabaseSpreadsheet_() {
     }
   } catch (e) {}
 
-  // Fallback to CONFIG constant used in this repo
   if (!spreadsheetId && typeof CONFIG !== 'undefined' && CONFIG.SPREADSHEET_ID_KEY) {
     spreadsheetId = CONFIG.SPREADSHEET_ID_KEY;
   }
@@ -26,9 +24,7 @@ function getDatabaseSpreadsheet_() {
   var active = SpreadsheetApp.getActiveSpreadsheet();
   if (active) return active;
 
-  throw new Error(
-    'Database spreadsheet is not available. Configure spreadsheet ID or run from bound spreadsheet context.'
-  );
+  throw new Error('Database spreadsheet is not available.');
 }
 
 function ensureSheet(sheetName, headers) {
@@ -59,25 +55,27 @@ function appendRow(sheetName, rowValues) {
   return true;
 }
 
+// Alias expected by initialize code
+function append(sheetName, rowValues) {
+  return appendRow(sheetName, rowValues);
+}
+
 function setRows(sheetName, values, headers) {
   var sheet = ensureSheet(sheetName, headers || null);
   sheet.clearContents();
-
   if (headers && headers.length) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
-
   if (values && values.length) {
     sheet.getRange(2, 1, values.length, values[0].length).setValues(values);
   }
-
   return true;
 }
 
-/** Compatibility facade for existing calls like DatabaseService.rows(...) */
 var DatabaseService = DatabaseService || {};
 DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
 DatabaseService.ensureSheet = ensureSheet;
 DatabaseService.rows = rows;
 DatabaseService.appendRow = appendRow;
+DatabaseService.append = append;      // <- important
 DatabaseService.setRows = setRows;
