@@ -1,29 +1,23 @@
 function getDatabaseSpreadsheet_() {
-  // 1) Preferred: configured spreadsheet ID
   var spreadsheetId = null;
+
   try {
     if (typeof ConfigService !== 'undefined' && ConfigService.get) {
-      spreadsheetId = ConfigService.get('1f6vzPD6VztFVdH-i5Yq-5ZUuBp_6VsU4w-h1_QXUr08');
+      spreadsheetId =
+        ConfigService.get('DATABASE_SPREADSHEET_ID') ||
+        ConfigService.get('SPREADSHEET_ID') ||
+        CONFIG.SPREADSHEET_ID_KEY; // current repo config value
     }
-  } catch (e) {}
-
-  if (spreadsheetId) {
-    try {
-      return SpreadsheetApp.openById(spreadsheetId);
-    } catch (e) {
-      throw new Error('DATABASE_SPREADSHEET_ID is set but inaccessible: ' + e.message);
-    }
+  } catch (e) {
+    spreadsheetId = CONFIG && CONFIG.SPREADSHEET_ID_KEY ? CONFIG.SPREADSHEET_ID_KEY : null;
   }
 
-  // 2) Fallback: active spreadsheet (works if bound script or opened sheet context)
+  if (spreadsheetId) return SpreadsheetApp.openById(spreadsheetId);
+
   var active = SpreadsheetApp.getActiveSpreadsheet();
   if (active) return active;
 
-  // 3) Hard fail with actionable message
-  throw new Error(
-    'Database spreadsheet is not available. Set DATABASE_SPREADSHEET_ID in configuration ' +
-    'or run this from a bound spreadsheet context.'
-  );
+  throw new Error('No spreadsheet ID configured and no active spreadsheet context found.');
 }
 
 function ensureSheet(sheetName, headers) {
