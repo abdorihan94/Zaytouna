@@ -51,3 +51,37 @@ function ensureSheet(sheetName, headers) {
 var DatabaseService = DatabaseService || {};
 DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
 DatabaseService.ensureSheet = ensureSheet;
+
+function rows(sheetName) {
+  var sheet = ensureSheet(sheetName);
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow < 2 || lastCol < 1) return [];
+  return sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+}
+
+function appendRow(sheetName, rowValues) {
+  var sheet = ensureSheet(sheetName);
+  sheet.appendRow(rowValues);
+  return true;
+}
+
+function setRows(sheetName, values, headers) {
+  var sheet = ensureSheet(sheetName, headers || null);
+  sheet.clearContents();
+  if (headers && headers.length) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  if (values && values.length) {
+    sheet.getRange(2, 1, values.length, values[0].length).setValues(values);
+  }
+  return true;
+}
+
+// Facade methods expected by service-style callers
+var DatabaseService = DatabaseService || {};
+DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
+DatabaseService.ensureSheet = ensureSheet;
+DatabaseService.rows = rows;
+DatabaseService.appendRow = appendRow;
+DatabaseService.setRows = setRows;
