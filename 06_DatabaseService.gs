@@ -51,11 +51,31 @@ function rows(sheetName) {
 
 function appendRow(sheetName, rowValues) {
   var sheet = ensureSheet(sheetName);
-  sheet.appendRow(rowValues);
+
+  // Accept object / scalar / 2D / 1D and normalize to a single row array
+  var row;
+  if (Array.isArray(rowValues)) {
+    // If passed as [[...]], take first row
+    row = Array.isArray(rowValues[0]) ? rowValues[0] : rowValues;
+  } else if (rowValues && typeof rowValues === 'object') {
+    // Map object values by header order when possible
+    var lastCol = sheet.getLastColumn();
+    if (lastCol > 0) {
+      var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      row = headers.map(function(h) {
+        return Object.prototype.hasOwnProperty.call(rowValues, h) ? rowValues[h] : '';
+      });
+    } else {
+      row = Object.keys(rowValues).map(function(k) { return rowValues[k]; });
+    }
+  } else {
+    row = [rowValues];
+  }
+
+  sheet.appendRow(row);
   return true;
 }
 
-// Alias expected by initialize code
 function append(sheetName, rowValues) {
   return appendRow(sheetName, rowValues);
 }
