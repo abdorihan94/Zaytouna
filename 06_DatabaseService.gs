@@ -1,10 +1,41 @@
+function getDatabaseSpreadsheet_() {
+  // 1) Preferred: configured spreadsheet ID
+  var spreadsheetId = null;
+  try {
+    if (typeof ConfigService !== 'undefined' && ConfigService.get) {
+      spreadsheetId = ConfigService.get('DATABASE_SPREADSHEET_ID');
+    }
+  } catch (e) {}
 
-var DatabaseService = {
-  spreadsheet:function(){var id=PropertiesService.getScriptProperties().getProperty(CONFIG.SPREADSHEET_ID_KEY);return id?SpreadsheetApp.openById(id):SpreadsheetApp.getActiveSpreadsheet();},
-  ensureSheet:function(name,headers){var ss=this.spreadsheet(), sh=ss.getSheetByName(name)||ss.insertSheet(name);if(sh.getLastRow()===0&&headers&&headers.length)sh.getRange(1,1,1,headers.length).setValues([headers]);return sh;},
-  headers:function(name){var sh=this.spreadsheet().getSheetByName(name);return sh&&sh.getLastColumn()?sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0]:[];},
-  rows:function(name){var sh=this.spreadsheet().getSheetByName(name);if(!sh||sh.getLastRow()<2)return [];var h=this.headers(name);return sh.getRange(2,1,sh.getLastRow()-1,h.length).getValues().map(function(r){var o={};h.forEach(function(k,i){o[k]=r[i];});return o;});},
-  append:function(name,record){var h=this.headers(name);if(!h.length){h=Object.keys(record);this.ensureSheet(name,h);}this.spreadsheet().getSheetByName(name).appendRow(h.map(function(k){return record[k]===undefined?'':record[k];}));},
-  upsert:function(name,record){var sh=this.spreadsheet().getSheetByName(name),h=this.headers(name),key=record.id;if(!sh||!h.length)throw Error('Sheet not initialized');var idCol=h.indexOf('id')+1, values=sh.getLastRow()>1?sh.getRange(2,idCol,sh.getLastRow()-1,1).getValues():[], row=-1;values.some(function(v,i){if(String(v[0])===String(key)){row=i+2;return true;}return false;});var data=h.map(function(k){return record[k]===undefined?'':record[k];});if(row<0)sh.appendRow(data);else sh.getRange(row,1,1,h.length).setValues([data]);return record;},
-  find:function(name,id){return this.rows(name).filter(function(r){return String(r.id)===String(id);})[0]||null;}
-};
+  if (spreadsheetId) {
+    try {
+      return SpreadsheetApp.openById(spreadsheetId);
+    } catch (e) {
+      throw new Error('DATABASE_SPREADSHEET_ID is set but inaccessible: ' + e.message);
+    }
+  }
+
+  // 2) Fallback: active spreadsheet (works if bound script or opened sheet context)
+  var active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+
+  // 3) Hard fail with actionable message
+  throw new Error(
+    'Database spreadsheet is not available. Set DATABASE_SPREADSHEET_ID in configuration ' +
+    'or run this from a bound spreadsheet context.'
+  );
+}
+
+function ensureSheet(sheetName, headers) {
+  var ss = getDatabaseSpreadsheet_();
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    if (headers && headers.length) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
+  } else if (headers && headers.length && sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  return sheet;
+}
