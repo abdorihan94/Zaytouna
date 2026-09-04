@@ -1,0 +1,15 @@
+<div class="content">
+  <h1>تقرير الطالب</h1>
+  <p>يتم توليد التقرير مباشرة من بيانات التقييمات المرسلة/المغلقة للطالب ضمن الفترة المحددة.</p>
+  <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <select id="reportAcademicYear"></select>
+    <select id="reportTerm"></select>
+    <input id="reportStartDate" type="date" title="بداية الفترة المخصصة (اختياري)">
+    <input id="reportEndDate" type="date" title="نهاية الفترة المخصصة (اختياري)">
+    <button class="primary" onclick="generateStudentReport(false)">إنشاء التقرير</button>
+    <button onclick="generateStudentReport(true)">إعادة توليد التقرير</button>
+    <button onclick="openStudentReportHistory(window.__reportStudentId)">سجل التقارير</button>
+  </div>
+  <div id="reportResult"></div>
+</div>
+<script>initStudentReportPage(window.__reportStudentId);</script>
