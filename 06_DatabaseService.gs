@@ -99,3 +99,19 @@ DatabaseService.rows = rows;
 DatabaseService.appendRow = appendRow;
 DatabaseService.append = append;      // <- important
 DatabaseService.setRows = setRows;
+
+function spreadsheet() {
+  return getDatabaseSpreadsheet_();
+}
+
+var DatabaseService = DatabaseService || {};
+DatabaseService.spreadsheet = spreadsheet;
+
+var DatabaseService = DatabaseService || {};
+DatabaseService.getDatabaseSpreadsheet_ = getDatabaseSpreadsheet_;
+DatabaseService.ensureSheet = ensureSheet;
+DatabaseService.rows = rows;
+DatabaseService.appendRow = appendRow;
+DatabaseService.append = append;
+DatabaseService.setRows = setRows;
+DatabaseService.spreadsheet = spreadsheet;
