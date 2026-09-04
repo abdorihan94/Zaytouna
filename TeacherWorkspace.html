@@ -1,0 +1,51 @@
+<div class="content">
+  <h1>مساحة عمل المعلم</h1>
+  <p>هذه القائمة تعرض فقط الدروس المسندة إليك (المعلم الحالي)، بصرف النظر عن أي صلاحية مراجعة أخرى قد تملكها.</p>
+  <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <input id="myLessonsSearch" placeholder="بحث في دروسي" style="min-width:220px;">
+    <select id="myLessonsStatus">
+      <option value="">كل الحالات</option>
+      <option value="DRAFT">مسودة</option>
+      <option value="SUBMITTED">مرسلة للمراجعة</option>
+      <option value="UNDER_REVIEW">قيد المراجعة</option>
+      <option value="REVISION_REQUIRED">تحتاج إلى تعديل</option>
+      <option value="APPROVED">معتمدة</option>
+      <option value="PUBLISHED">منشورة</option>
+      <option value="ARCHIVED">مؤرشفة</option>
+    </select>
+    <button class="primary" onclick="loadMyLessons()">تصفية</button>
+    <button onclick="createMyLessonQuick()">إعداد درس جديد</button>
+  </div>
+  <div id="myLessonsTable" style="overflow-x:auto"></div>
+</div>
+<script>
+function createMyLessonQuick(){
+  var title = window.prompt('عنوان الدرس الجديد', 'درس جديد');
+  if (!title) return;
+  call('lessonCreate',{lesson:{title:title,subject:'عام',grade:'المرحلة الأساسية',summary:'تم إنشاؤه من مساحة عمل المعلم',content:{sections:[{title:'مقدمة',body:'محتوى جديد'}]}}},function(){loadMyLessons();});
+}
+function submitMyLesson(lessonId){
+  call('lessonSubmit',{lessonId:lessonId},function(){loadMyLessons();});
+}
+function viewMyLessonFile(lessonId,type){
+  call('lessonGetFile',{lessonId:lessonId,type:type},function(data){
+    if (data && data.url) window.open(data.url,'_blank');
+  });
+}
+function renderMyLessons(rows){
+  var el = document.getElementById('myLessonsTable');
+  if (!el) return;
+  if (!rows.length) { el.innerHTML = '<p>لا توجد دروس مسندة إليك بعد.</p>'; return; }
+  el.innerHTML = '<table style="width:100%;background:#fff;padding:10px"><thead><tr><th>العنوان</th><th>المادة</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>' + rows.map(function(r){
+    var canSubmit = r.status === 'DRAFT' || r.status === 'REVISION_REQUIRED';
+    var actions = canSubmit ? '<button onclick="submitMyLesson(\'' + r.id + '\')">إرسال للمراجعة</button>' : '';
+    if (r.documentFileId) actions += '<button onclick="viewMyLessonFile(\'' + r.id + '\',\'DOCUMENT\')">عرض المستند</button>';
+    if (r.pdfFileId) actions += '<button onclick="viewMyLessonFile(\'' + r.id + '\',\'PDF\')">عرض PDF</button>';
+    return '<tr><td>' + String(r.title||'') + '</td><td>' + String(r.subject||'') + '</td><td>' + String(r.status||'') + '</td><td>' + actions + '</td></tr>';
+  }).join('') + '</tbody></table>';
+}
+function loadMyLessons(){
+  call('lessonsMine',{query:(document.getElementById('myLessonsSearch')||{}).value,status:(document.getElementById('myLessonsStatus')||{}).value},renderMyLessons);
+}
+loadMyLessons();
+</script>
